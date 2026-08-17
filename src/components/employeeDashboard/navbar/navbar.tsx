@@ -28,7 +28,7 @@ import {
 const navItems = [
   {
     label: "Dashboard",
-    href: "/employee/dashboard",
+    href: "/employee",
     icon: LayoutDashboard,
   },
   {
@@ -168,22 +168,24 @@ export default function TopBarNav() {
 
             {/* Brand */}
 
-            <div className="hidden flex-col sm:flex">
-              <span
-                className="
+            <Link href="/employee">
+              <div className="hidden flex-col sm:flex">
+                <span
+                  className="
                   text-sm
                   font-semibold
                   tracking-tight
                   text-slate-900
                 "
-              >
-                WorkFlowOS
-              </span>
+                >
+                  WorkFlowOS
+                </span>
 
-              <span className="text-xs text-slate-500">
-                Employee Operations
-              </span>
-            </div>
+                <span className="text-xs text-slate-500">
+                  Employee Operations
+                </span>
+              </div>
+            </Link>
           </div>
 
           {/* =================================================
@@ -389,7 +391,7 @@ export default function TopBarNav() {
           {/* Logo */}
 
           <Link
-            href="/employee/dashboard"
+            href="/employee"
             onClick={closeMenu}
             className="
               flex

@@ -12,11 +12,15 @@ import Link from "next/link";
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import Alert from "@mui/material/Alert";
+import CheckIcon from "@mui/icons-material/Check";
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [isLoading, setISLoading] = useState<boolean>(false);
+
+  const [isAlert, setIsAlert] = useState(false);
 
   const [loginData, setLoginData] = useState<LoginDataProp>({
     email: "",
@@ -44,13 +48,37 @@ export default function LoginPage() {
       router.push("/employee");
     } catch (error) {
       console.log(error);
+      setIsAlert(true);
     } finally {
       setISLoading(false);
+      setTimeout(() => {
+        setIsAlert(false);
+      }, 3000);
     }
   };
 
   return (
     <main className={style.login_container}>
+      {isAlert && (
+        <div
+          className="
+      fixed
+      top-5 right-5
+      z-50
+      w-[calc(100%-2rem)]
+      max-w-md
+      animate-[fadeUp_0.4s_ease-out]
+    "
+        >
+          <Alert
+            severity="error"
+            variant="filled"
+            className="rounded-2xl shadow-2xl"
+          >
+            Invalid email or password. Please try again.
+          </Alert>
+        </div>
+      )}
       <section className={style.login_card}>
         {/* BRAND */}
         <div className={style.brand_section}>
