@@ -5,9 +5,9 @@ interface EmployeeLayout {
 
 export default function RootLayout({ children }: EmployeeLayout) {
   return (
-    <body>
+    <div className="root">
       <TopBarNav />
       {children}
-    </body>
+    </div>
   );
 }
