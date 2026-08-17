@@ -10,6 +10,10 @@ export async function POST(request: Request) {
 
   const jwtKey = process.env.JWT_KEY;
 
+  if (!jwtKey) {
+    throw new Error(`jwt key not defined in login route.ts`);
+  }
+
   try {
     const verifyEmail = await user.findOne({
       email: email,
