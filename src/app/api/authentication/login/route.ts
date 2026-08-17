@@ -8,6 +8,8 @@ export async function POST(request: Request) {
 
   const { email, password } = await request.json();
 
+  const jwtKey = process.env.JWT_KEY;
+
   try {
     const verifyEmail = await user.findOne({
       email: email,
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
         name: verifyEmail.username,
         email: verifyEmail.email,
       },
-      process.env.JWT_KEY,
+      jwtKey,
       {
         expiresIn: "7d",
       },
