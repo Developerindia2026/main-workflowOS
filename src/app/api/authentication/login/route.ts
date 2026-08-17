@@ -4,17 +4,17 @@ import connectDB from "@/lib/mongoose";
 import jwt from "jsonwebtoken";
 
 export async function POST(request: Request) {
-  await connectDB();
-
-  const { email, password } = await request.json();
-
-  const jwtKey = process.env.JWT_KEY;
-
-  if (!jwtKey) {
-    throw new Error(`jwt key not defined in login route.ts`);
-  }
-
   try {
+    await connectDB();
+
+    const { email, password } = await request.json();
+
+    const jwtKey = process.env.JWT_KEY;
+
+    if (!jwtKey) {
+      throw new Error(`jwt key not defined in login route.ts`);
+    }
+
     const verifyEmail = await user.findOne({
       email: email,
       password: password,
