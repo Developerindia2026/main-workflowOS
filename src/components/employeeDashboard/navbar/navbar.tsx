@@ -77,7 +77,7 @@ export default function TopBarNav() {
   const handleLogout = async () => {
     try {
       setIsloading(true);
-      const response = await axios.post(`api/authentication/logout`);
+      const response = await axios.post(`/api/authentication/logout`);
       router.push("/");
     } catch (error) {
       console.log(error);

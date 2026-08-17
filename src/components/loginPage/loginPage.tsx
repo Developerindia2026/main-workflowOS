@@ -44,7 +44,7 @@ export default function LoginPage() {
     setISLoading(true);
 
     try {
-      const response = await axios.post(`api/authentication/login`, loginData);
+      const response = await axios.post(`/api/authentication/login`, loginData);
       router.push("/employee");
     } catch (error) {
       console.log(error);
