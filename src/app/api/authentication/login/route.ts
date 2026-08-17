@@ -5,20 +5,30 @@ import jwt from "jsonwebtoken";
 
 export async function POST(request: Request) {
   try {
+    console.log("🔥 LOGIN API STARTED");
+
     await connectDB();
 
+    console.log("✅ DATABASE CONNECTED");
+
     const { email, password } = await request.json();
+
+    console.log("✅ REQUEST DATA RECEIVED");
 
     const jwtKey = process.env.JWT_KEY;
 
     if (!jwtKey) {
-      throw new Error(`jwt key not defined in login route.ts`);
+      throw new Error("JWT_KEY is not defined");
     }
+
+    console.log("✅ JWT_KEY FOUND");
 
     const verifyEmail = await user.findOne({
       email: email,
       password: password,
     });
+
+    console.log("✅ USER QUERY COMPLETED:", !!verifyEmail);
 
     if (!verifyEmail) {
       return NextResponse.json({ message: "Email not found" }, { status: 409 });
@@ -36,6 +46,8 @@ export async function POST(request: Request) {
       },
     );
 
+    console.log("✅ JWT CREATED");
+
     const response = NextResponse.json(
       {
         message: "LOGIN APPROVED",
@@ -52,7 +64,13 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.log(error);
-    return NextResponse.json({ message: "NO DATA ADDED" }, { status: 500 });
+    console.error("❌ LOGIN API ERROR:", error);
+
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }

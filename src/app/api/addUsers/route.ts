@@ -35,7 +35,13 @@ export async function POST() {
 
     return NextResponse.json({ message: "DATA ADDED" }, { status: 200 });
   } catch (error) {
-    console.log(error);
-    return NextResponse.json({ message: "NO DATA ADDED" }, { status: 500 });
+    console.error("🔥 ADD USERS ERROR:", error);
+
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }
