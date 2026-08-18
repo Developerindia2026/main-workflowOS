@@ -1,5 +1,9 @@
 "use client";
 
+import axios from "axios";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import {
   UserRound,
   Mail,
@@ -17,8 +21,47 @@ import {
   KeyRound,
   ChevronRight,
 } from "lucide-react";
+import user from "@/models/users";
+
+interface userInfoProp {
+  username: string;
+  email: string;
+  phone: string;
+  department: string;
+  role: string;
+  designation: string;
+  joiningDate: Date;
+  profileImage: string;
+}
 
 export default function ProfilePage() {
+  const router = useRouter();
+
+  const [userInfo, setUserInfo] = useState<userInfoProp[]>([]);
+
+  // EDIT INFO
+  const editUser = async (userID) => {
+    try {
+      router.push(`/employee/profile/${userID}`);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // FETCH USER INFO
+  const fetchUser = async () => {
+    try {
+      const response = await axios.get(`/api/profile`);
+      setUserInfo(response.data.user);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f6f8fc] px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-7xl">
@@ -50,6 +93,7 @@ export default function ProfilePage() {
           <button
             type="button"
             className="flex w-fit items-center gap-2 rounded-xl bg-[#030A24] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-[#07123d]"
+            onClick={() => editUser(userInfo._id)}
           >
             <Edit3 size={16} />
             Edit Profile
@@ -66,14 +110,7 @@ export default function ProfilePage() {
             <div className="absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-indigo-500/10 blur-2xl" />
 
             <div className="absolute inset-0 opacity-20">
-              <div
-                className="h-full w-full"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)",
-                  backgroundSize: "30px 30px",
-                }}
-              />
+              <div className="h-full w-full" />
             </div>
           </div>
 
@@ -98,8 +135,8 @@ export default function ProfilePage() {
               {/* Employee Name */}
               <div className="flex-1 sm:pb-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-2xl font-bold tracking-tight text-[#030A24]">
-                    Deepanshu Sharma
+                  <h2 className="text-2xl font-bold tracking-tight text-[white] mb-4">
+                    {userInfo.username}
                   </h2>
 
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
@@ -109,7 +146,7 @@ export default function ProfilePage() {
                 </div>
 
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Frontend Developer
+                  {userInfo.designation}
                 </p>
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400">
@@ -140,7 +177,11 @@ export default function ProfilePage() {
           <ProfileStat
             icon={<CalendarDays size={18} />}
             label="Joined"
-            value="04 Sep 2025"
+            value={new Date(userInfo.joiningDate).toLocaleString("en-IN", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            })}
             iconClass="bg-blue-50 text-blue-600"
           />
 
@@ -182,7 +223,7 @@ export default function ProfilePage() {
               action
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-                <InfoItem label="Full Name" value="Deepanshu Sharma" />
+                <InfoItem label="Full Name" value={userInfo.username} />
 
                 <InfoItem label="Date of Birth" value="12 March 2003" />
 
@@ -202,13 +243,13 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
                 <InfoItem
                   label="Email Address"
-                  value="deepanshu@example.com"
+                  value={userInfo.email}
                   icon={<Mail size={15} />}
                 />
 
                 <InfoItem
                   label="Phone Number"
-                  value="+91 98765 43210"
+                  value={`+91-${userInfo.phone}`}
                   icon={<Phone size={15} />}
                 />
 
@@ -234,9 +275,9 @@ export default function ProfilePage() {
               action
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-                <InfoItem label="Job Title" value="Frontend Developer" />
+                <InfoItem label="Job Title" value={userInfo.department} />
 
-                <InfoItem label="Department" value="Engineering" />
+                <InfoItem label="Department" value={userInfo.role} />
 
                 <InfoItem label="Employment Type" value="Full-Time" />
 

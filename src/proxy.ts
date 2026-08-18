@@ -10,10 +10,12 @@ export async function proxy(request: NextRequest) {
 
   const decoded = jwt.verify(token, process.env.JWT_KEY!) as {
     name: string;
+    id: string;
   };
 
   const headers = new Headers(request.headers);
   headers.set("Username", decoded.name);
+  headers.set("userId", decoded.id);
 
   return NextResponse.next({
     request: { headers },
