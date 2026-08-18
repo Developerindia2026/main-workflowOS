@@ -32,7 +32,7 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Check-In",
+    label: "check-in",
     href: "/employee/check-in",
     icon: ClockCheck,
   },

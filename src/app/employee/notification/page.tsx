@@ -1,4 +1,4 @@
-import NotificationPage from "@/components/notificationPage/notificationPage";
+import NotificationPage from "@/components/employeeDashboard/notificationPage/notificationPage";
 
 export default function Notification() {
   return <NotificationPage />;

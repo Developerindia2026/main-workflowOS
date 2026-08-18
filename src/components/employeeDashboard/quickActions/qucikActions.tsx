@@ -12,7 +12,7 @@ export default async function QucikActions() {
   const handleGreet = () => {
     const time = new Date().getHours();
 
-    if (time < 12) {
+    if (time > 12) {
       return "Morning";
     } else if (time < 17) {
       return "Afternoon";
