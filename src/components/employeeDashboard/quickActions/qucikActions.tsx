@@ -3,10 +3,23 @@ import { CircleCheckBig } from "lucide-react";
 import { FileText } from "lucide-react";
 import { CalendarCheck } from "lucide-react";
 import { ThermometerSnowflake } from "lucide-react";
+import { time } from "console";
 
 export default async function QucikActions() {
   const head = await headers();
   const name = head.get("username");
+
+  const handleGreet = () => {
+    const time = new Date().getHours();
+
+    if (time < 12) {
+      return "Morning";
+    } else if (time < 17) {
+      return "Afternoon";
+    } else {
+      return "Evening";
+    }
+  };
 
   return (
     <div className="min-h-auto w-full bg-slate-50 px-4 py-6 sm:px-6 lg:px-10">
@@ -17,7 +30,7 @@ export default async function QucikActions() {
         </p>
 
         <h1 className="text-2xl font-bold tracking-tight text-[#030A24] sm:text-3xl lg:text-4xl">
-          Good Morning, <span className="text-blue-600">{name} 🧑‍💼</span>
+          Good {handleGreet()}, <span className="text-blue-600">{name} 🧑‍💼</span>
         </h1>
 
         <p className="mt-2 text-sm text-slate-500">
