@@ -141,7 +141,7 @@ export default function LoginPage() {
             fullWidth
             className={style.login_button}
           >
-            {isLoading ? "Approving.." : "Sign In"}
+            {isLoading ? "Approving Access" : "Sign In"}
           </Button>
         </form>
 
@@ -149,7 +149,7 @@ export default function LoginPage() {
         <div className={style.admin_section}>
           <span>Need administrator access?</span>
 
-          <Link href="/admin">Admin Panel</Link>
+          <Link href="/admin/login">Admin Panel</Link>
         </div>
 
         {/* FOOTER */}
