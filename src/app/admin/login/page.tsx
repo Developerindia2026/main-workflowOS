@@ -18,7 +18,7 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [Inncorrect, setIncorrect] = useState<boolean>(false);
 
-  const handleInput = async (event: React.InputEvent<HTMLInputElement>) => {
+  const handleInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
 
     setFormData((prev) => {

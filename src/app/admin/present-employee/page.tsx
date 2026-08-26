@@ -25,6 +25,8 @@ export default function PresentEmployees() {
     }
   };
 
+  useEffect(() => {}, []);
+
   return (
     <div className="min-h-screen w-full bg-slate-100 px-4 py-6 sm:px-6 lg:px-10">
       {/* Header */}
