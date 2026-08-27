@@ -32,15 +32,16 @@ interface userInfoProp {
   designation: string;
   joiningDate: Date;
   profileImage: string;
+  _id: string;
 }
 
 export default function ProfilePage() {
   const router = useRouter();
 
-  const [userInfo, setUserInfo] = useState<userInfoProp[]>([]);
+  const [userInfo, setUserInfo] = useState<userInfoProp | null>(null);
 
   // EDIT INFO
-  const editUser = async (userID) => {
+  const editUser = async ({ userID }: { userID: string }) => {
     try {
       router.push(`/employee/profile/${userID}`);
     } catch (error) {
@@ -93,7 +94,11 @@ export default function ProfilePage() {
           <button
             type="button"
             className="flex w-fit items-center gap-2 rounded-xl bg-[#030A24] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-[#07123d]"
-            onClick={() => editUser(userInfo._id)}
+            onClick={() => {
+              if (userInfo) {
+                editUser({ userID: userInfo._id });
+              }
+            }}
           >
             <Edit3 size={16} />
             Edit Profile
@@ -136,7 +141,7 @@ export default function ProfilePage() {
               <div className="flex-1 sm:pb-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-2xl font-bold tracking-tight text-[white] mb-4">
-                    {userInfo.username}
+                    {userInfo?.username}
                   </h2>
 
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
@@ -146,7 +151,7 @@ export default function ProfilePage() {
                 </div>
 
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  {userInfo.designation}
+                  {userInfo?.designation}
                 </p>
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400">
@@ -177,11 +182,15 @@ export default function ProfilePage() {
           <ProfileStat
             icon={<CalendarDays size={18} />}
             label="Joined"
-            value={new Date(userInfo.joiningDate).toLocaleString("en-IN", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            })}
+            value={
+              userInfo?.joiningDate
+                ? new Date(userInfo?.joiningDate).toLocaleString("en-IN", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : ""
+            }
             iconClass="bg-blue-50 text-blue-600"
           />
 
@@ -223,7 +232,7 @@ export default function ProfilePage() {
               action
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-                <InfoItem label="Full Name" value={userInfo.username} />
+                <InfoItem label="Full Name" value={userInfo?.username ?? ""} />
 
                 <InfoItem label="Date of Birth" value="12 March 2003" />
 
@@ -243,13 +252,13 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
                 <InfoItem
                   label="Email Address"
-                  value={userInfo.email}
+                  value={userInfo?.email ?? ""}
                   icon={<Mail size={15} />}
                 />
 
                 <InfoItem
                   label="Phone Number"
-                  value={`+91-${userInfo.phone}`}
+                  value={`+91-${userInfo?.phone}`}
                   icon={<Phone size={15} />}
                 />
 
@@ -275,9 +284,12 @@ export default function ProfilePage() {
               action
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-                <InfoItem label="Job Title" value={userInfo.department} />
+                <InfoItem
+                  label="Job Title"
+                  value={userInfo?.department ?? ""}
+                />
 
-                <InfoItem label="Department" value={userInfo.role} />
+                <InfoItem label="Department" value={userInfo?.role ?? ""} />
 
                 <InfoItem label="Employment Type" value="Full-Time" />
 

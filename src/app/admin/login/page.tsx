@@ -1,7 +1,12 @@
 "use client";
-import { ChangeEvent, FormEvent, useState } from "react";
+
+interface LoginDataAdmin {
+  email: string;
+  password: string;
+}
+
+import { useState } from "react";
 import axios from "axios";
-import LoginDataAdmin from "@/types/loginData";
 import { useRouter } from "next/navigation";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";

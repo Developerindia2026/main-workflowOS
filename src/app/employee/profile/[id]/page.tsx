@@ -39,7 +39,7 @@ export default function ProfileEdit() {
   const params = useParams();
   const id = params.id;
 
-  const [editData, setEditData] = useState<EditDataProp>({});
+  const [editData, setEditData] = useState<EditDataProp | null>(null);
 
   // GET EDIT DATA
   const getEditData = async () => {
@@ -118,7 +118,7 @@ export default function ProfileEdit() {
               {/* Avatar */}
               <div className="relative w-fit">
                 <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-blue-600 to-indigo-700 text-3xl font-bold text-white shadow-xl sm:h-28 sm:w-28 sm:text-4xl">
-                  {editData.username?.slice(0, 2).toUpperCase()}
+                  {editData?.username?.slice(0, 2).toUpperCase()}
                 </div>
 
                 <button
@@ -133,7 +133,7 @@ export default function ProfileEdit() {
               <div className="flex-1 sm:pb-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-2xl font-bold tracking-tight text-[white] mb-3">
-                    {editData.username}
+                    {editData?.username}
                   </h2>
 
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
@@ -143,18 +143,18 @@ export default function ProfileEdit() {
                 </div>
 
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  {editData.designation}
+                  {editData?.designation}
                 </p>
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400">
                   <span className="flex items-center gap-1.5">
                     <Building2 size={14} />
-                    {editData.department}
+                    {editData?.department}
                   </span>
 
                   <span className="flex items-center gap-1.5">
                     <BadgeCheck size={14} />
-                    {editData.role}
+                    {editData?.role}
                   </span>
                 </div>
               </div>
@@ -201,7 +201,7 @@ export default function ProfileEdit() {
 
                     <input
                       type="text"
-                      value={editData.username}
+                      value={editData?.username}
                       className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#030A24] focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                     />
                   </div>
@@ -221,7 +221,7 @@ export default function ProfileEdit() {
 
                     <input
                       type="email"
-                      value={editData.email}
+                      value={editData?.email}
                       className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#030A24] focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                     />
                   </div>
@@ -241,7 +241,7 @@ export default function ProfileEdit() {
 
                     <input
                       type="text"
-                      value={editData.phone}
+                      value={editData?.phone}
                       className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#030A24] focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                     />
                   </div>
@@ -261,7 +261,7 @@ export default function ProfileEdit() {
 
                     <input
                       type="text"
-                      value={editData.role}
+                      value={editData?.role}
                       disabled
                       className="h-12 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 pl-10 pr-4 text-sm font-medium capitalize text-slate-400 outline-none"
                     />
@@ -305,7 +305,7 @@ export default function ProfileEdit() {
 
                     <input
                       type="text"
-                      value={editData.department}
+                      value={editData?.department}
                       disabled
                       className="h-12 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 pl-10 pr-4 text-sm font-medium text-slate-400 outline-none"
                     />
@@ -326,7 +326,7 @@ export default function ProfileEdit() {
 
                     <input
                       type="text"
-                      value={editData.designation}
+                      value={editData?.designation}
                       disabled
                       className="h-12 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 pl-10 pr-4 text-sm font-medium text-slate-400 outline-none"
                     />
@@ -347,14 +347,18 @@ export default function ProfileEdit() {
 
                     <input
                       type="text"
-                      value={new Date(editData.joiningDate).toLocaleDateString(
-                        "en-IN",
-                        {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        },
-                      )}
+                      value={
+                        editData?.joiningDate
+                          ? new Date(editData.joiningDate).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              },
+                            )
+                          : ""
+                      }
                       disabled
                       className="h-12 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 pl-10 pr-4 text-sm font-medium text-slate-400 outline-none"
                     />

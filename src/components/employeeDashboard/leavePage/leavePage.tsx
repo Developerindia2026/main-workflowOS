@@ -1,6 +1,13 @@
 "use client";
 
-import leaveDataProp from "./leaveDataProp";
+interface leaveDataProp {
+  reason: string;
+  leaveType: string;
+  _id?: string;
+  createdAt?: string;
+  status?: string;
+}
+
 import TextField from "@mui/material/TextField";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -224,14 +231,16 @@ export default function LeavePage() {
 
                 <tbody className="divide-y divide-slate-100">
                   {leaves.map((leave) => {
-                    const leaveDate = new Date(leave.createdAt);
+                    const leaveDate = leave.createdAt
+                      ? new Date(leave.createdAt)
+                      : null;
 
                     const today = new Date();
 
                     const isToday =
-                      leaveDate.toDateString() === today.toDateString();
+                      leaveDate?.toDateString() === today.toDateString();
 
-                    const formattedDate = leaveDate.toLocaleDateString(
+                    const formattedDate = leaveDate?.toLocaleDateString(
                       "en-IN",
                       {
                         day: "2-digit",
