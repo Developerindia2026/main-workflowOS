@@ -46,7 +46,11 @@ export default function Announcement() {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInput = (
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
     const { name, value } = event.target;
 
     setFormData((prev) => {
