@@ -1,6 +1,6 @@
 "use client";
 
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import {
   BadgeCheck,
   CalendarDays,
@@ -10,76 +10,167 @@ import {
   LogIn,
   LogOut,
   MapPin,
+  RefreshCw,
   Timer,
   TrendingUp,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /* =========================================================
    TYPES
 ========================================================= */
 
+interface AttendanceLocation {
+  latitude?: number;
+  longitude?: number;
+}
+
+interface CheckInData extends AttendanceLocation {
+  time?: string;
+}
+
+interface CheckOutData extends AttendanceLocation {
+  time?: string;
+}
+
 interface AttendanceRecord {
   _id?: string;
+
   date?: string;
 
-  checkIn?: {
-    time?: string;
-    latitude?: number;
-    longitude?: number;
+  employee?: {
+    _id?: string;
+    username?: string;
+    email?: string;
+    department?: string;
+    designation?: string;
   };
 
-  checkOut?: {
-    time?: string;
-    latitude?: number;
-    longitude?: number;
-  };
+  checkIn?: CheckInData;
+
+  checkOut?: CheckOutData;
 
   status?: string;
+
   workingTime?: number | string;
 }
 
-type ActionType = "checkIn" | "checkOut" | null;
+interface AttendanceApiResponse {
+  attendence?: AttendanceRecord | null;
+  attendance?: AttendanceRecord | null;
+}
+
+type ActionType = "checkIn" | "checkOut" | "refresh" | null;
 
 /* =========================================================
-   HELPERS
+   API ENDPOINTS
 ========================================================= */
 
+/*
+  IMPORTANT:
+
+  This endpoint must return ONLY the logged-in employee's
+  attendance for TODAY.
+
+  Example response:
+
+  {
+    attendence: {
+      _id: "...",
+      employee: {...},
+      checkIn: {
+        time: "2026-08-27T07:10:02.004Z"
+      },
+      checkOut: null,
+      status: "Present"
+    }
+  }
+*/
+
+const MY_TODAY_API = "/api/attendence/my-today";
+
+const CHECK_IN_API = "/api/attendence/checkIn";
+
+const CHECK_OUT_API = "/api/attendence/checkout";
+
+/* =========================================================
+   DATE / TIME HELPERS
+========================================================= */
+
+const IST_OPTIONS: Intl.DateTimeFormatOptions = {
+  timeZone: "Asia/Kolkata",
+};
+
+/* ---------------------------------------------------------
+   Format Time
+--------------------------------------------------------- */
+
 const formatTime = (time?: string) => {
-  if (!time) return "--:--";
+  if (!time) {
+    return "--:--";
+  }
 
   const date = new Date(time);
 
   if (Number.isNaN(date.getTime())) {
-    return time;
+    return "--:--";
   }
 
-  return date.toLocaleTimeString([], {
+  return date.toLocaleTimeString("en-IN", {
+    ...IST_OPTIONS,
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 };
 
+/* ---------------------------------------------------------
+   Format Date
+--------------------------------------------------------- */
+
 const formatDate = (date?: string) => {
-  if (!date) return "Today";
+  const value = date ? new Date(date) : new Date();
 
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return date;
+  if (Number.isNaN(value.getTime())) {
+    return "Today";
   }
 
-  return parsedDate.toLocaleDateString([], {
+  return value.toLocaleDateString("en-IN", {
+    ...IST_OPTIONS,
     weekday: "long",
     day: "numeric",
-    month: "short",
+    month: "long",
     year: "numeric",
   });
 };
 
-const calculateWorkingTime = (checkIn?: string, checkOut?: string): string => {
-  if (!checkIn) return "0h 0m";
+/* ---------------------------------------------------------
+   Live Current Time
+--------------------------------------------------------- */
+
+const formatCurrentTime = (date: Date) => {
+  return date.toLocaleTimeString("en-IN", {
+    ...IST_OPTIONS,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+};
+
+/* =========================================================
+   WORKING TIME
+========================================================= */
+
+const calculateWorkingTime = (
+  checkIn?: string,
+  checkOut?: string,
+  currentTime: number = Date.now(),
+) => {
+  if (!checkIn) {
+    return "0h 0m";
+  }
 
   const start = new Date(checkIn).getTime();
 
@@ -87,7 +178,11 @@ const calculateWorkingTime = (checkIn?: string, checkOut?: string): string => {
     return "0h 0m";
   }
 
-  const end = checkOut ? new Date(checkOut).getTime() : Date.now();
+  let end = currentTime;
+
+  if (checkOut) {
+    end = new Date(checkOut).getTime();
+  }
 
   if (Number.isNaN(end) || end < start) {
     return "0h 0m";
@@ -96,9 +191,20 @@ const calculateWorkingTime = (checkIn?: string, checkOut?: string): string => {
   const totalMinutes = Math.floor((end - start) / 60000);
 
   const hours = Math.floor(totalMinutes / 60);
+
   const minutes = totalMinutes % 60;
 
   return `${hours}h ${minutes}m`;
+};
+
+/* =========================================================
+   API RESPONSE HELPER
+========================================================= */
+
+const extractAttendance = (
+  data: AttendanceApiResponse,
+): AttendanceRecord | null => {
+  return data.attendence ?? data.attendance ?? null;
 };
 
 /* =========================================================
@@ -106,31 +212,27 @@ const calculateWorkingTime = (checkIn?: string, checkOut?: string): string => {
 ========================================================= */
 
 export default function CheckInPage() {
+  /* =======================================================
+     STATE
+  ======================================================= */
+
   const [attendance, setAttendance] = useState<AttendanceRecord | null>(null);
+
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [actionLoading, setActionLoading] = useState<ActionType>(null);
 
   const [locationLoading, setLocationLoading] = useState(false);
 
-  const [currentTime, setCurrentTime] = useState(new Date());
-
   const [errorMessage, setErrorMessage] = useState("");
 
-  /* =========================================================
-     LIVE CLOCK
-  ========================================================= */
+  const [successMessage, setSuccessMessage] = useState("");
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-    return () => clearInterval(interval);
-  }, []);
-
-  /* =========================================================
+  /* =======================================================
      DERIVED STATES
-  ========================================================= */
+  ======================================================= */
 
   const isCheckedIn = Boolean(attendance?.checkIn?.time);
 
@@ -138,16 +240,93 @@ export default function CheckInPage() {
 
   const isWorking = isCheckedIn && !isCheckedOut;
 
+  /* =======================================================
+     WORKING TIME
+  ======================================================= */
+
   const workingTime = useMemo(() => {
     return calculateWorkingTime(
       attendance?.checkIn?.time,
       attendance?.checkOut?.time,
+      currentTime.getTime(),
     );
   }, [attendance?.checkIn?.time, attendance?.checkOut?.time, currentTime]);
 
-  /* =========================================================
-     GET LOCATION
-  ========================================================= */
+  /* =======================================================
+     LIVE CLOCK
+  ======================================================= */
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  /* =======================================================
+     FETCH TODAY'S ATTENDANCE
+  ======================================================= */
+
+  const fetchTodayAttendance = useCallback(async (showLoader = false) => {
+    try {
+      if (showLoader) {
+        setActionLoading("refresh");
+      }
+
+      const response = await axios.get<AttendanceApiResponse>(MY_TODAY_API, {
+        /*
+                Prevent browser/proxy from giving us
+                an unwanted cached response.
+              */
+        params: {
+          _: Date.now(),
+        },
+      });
+
+      const data = extractAttendance(response.data);
+
+      setAttendance(data);
+    } catch (error) {
+      const axiosError = error as AxiosError;
+
+      /*
+          404 can simply mean:
+          "employee hasn't checked in today."
+        */
+      if (axiosError.response?.status === 404) {
+        setAttendance(null);
+      } else {
+        console.error("FETCH TODAY ATTENDANCE ERROR:", error);
+      }
+    } finally {
+      if (showLoader) {
+        setActionLoading(null);
+      }
+    }
+  }, []);
+
+  /* =======================================================
+     INITIAL LOAD
+  ======================================================= */
+
+  useEffect(() => {
+    const loadAttendance = async () => {
+      setInitialLoading(true);
+
+      await fetchTodayAttendance();
+
+      setInitialLoading(false);
+    };
+
+    loadAttendance();
+  }, [fetchTodayAttendance]);
+
+  /* =======================================================
+     LOCATION
+  ======================================================= */
 
   const getCurrentLocation = (): Promise<{
     latitude: number;
@@ -164,104 +343,284 @@ export default function CheckInPage() {
         (position) => {
           resolve({
             latitude: position.coords.latitude,
+
             longitude: position.coords.longitude,
           });
         },
+
         (error) => {
           reject(error);
         },
+
         {
           enableHighAccuracy: true,
+
           timeout: 10000,
+
           maximumAge: 0,
         },
       );
     });
   };
 
-  /* =========================================================
+  /* =======================================================
+     LOCATION ERROR
+  ======================================================= */
+
+  const getLocationErrorMessage = (error: unknown) => {
+    if (error instanceof GeolocationPositionError) {
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          return "Location permission was denied. Please allow location access and try again.";
+
+        case error.POSITION_UNAVAILABLE:
+          return "Your current location could not be detected. Please try again.";
+
+        case error.TIMEOUT:
+          return "Location request timed out. Please try again.";
+
+        default:
+          return "Unable to get your current location.";
+      }
+    }
+
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return "Something went wrong. Please try again.";
+  };
+
+  /* =======================================================
      CHECK IN
-  ========================================================= */
+  ======================================================= */
 
   const handleCheckIn = async () => {
-    if (isCheckedIn) return;
+    /*
+      Protection 1:
+      Don't check in if already checked in.
+    */
+
+    if (isCheckedIn) {
+      return;
+    }
+
+    /*
+      Protection 2:
+      Don't allow two actions simultaneously.
+    */
+
+    if (actionLoading !== null) {
+      return;
+    }
 
     try {
       setErrorMessage("");
+      setSuccessMessage("");
+
       setActionLoading("checkIn");
+
       setLocationLoading(true);
+
+      /* -----------------------------------------------
+         GET CURRENT LOCATION
+      ----------------------------------------------- */
 
       const location = await getCurrentLocation();
 
       setLocationLoading(false);
 
-      const response = await axios.post("/api/attendence/checkIn", {
+      /* -----------------------------------------------
+         SEND CHECK-IN
+      ----------------------------------------------- */
+
+      await axios.post(CHECK_IN_API, {
         latitude: location.latitude,
+
         longitude: location.longitude,
       });
 
-      setAttendance(response.data.attendence);
+      /*
+        IMPORTANT:
 
-      console.log("CHECK-IN SUCCESS:", response.data.attendence);
+        Don't depend only on POST response.
+
+        Fetch the latest record from database.
+      */
+
+      await fetchTodayAttendance();
+
+      setSuccessMessage("Check-in recorded successfully.");
     } catch (error) {
       console.error("CHECK-IN ERROR:", error);
 
-      setErrorMessage(
-        "Unable to check in. Please allow location access and try again.",
-      );
+      /*
+        Important recovery:
+
+        Backend might save the record successfully
+        but frontend could still receive an error.
+
+        So check DB one more time.
+      */
+
+      try {
+        const response = await axios.get<AttendanceApiResponse>(MY_TODAY_API, {
+          params: {
+            _: Date.now(),
+          },
+        });
+
+        const existingAttendance = extractAttendance(response.data);
+
+        if (existingAttendance?.checkIn?.time) {
+          setAttendance(existingAttendance);
+
+          setSuccessMessage("Check-in was recorded successfully.");
+
+          setErrorMessage("");
+
+          return;
+        }
+      } catch (recoveryError) {
+        console.error("CHECK-IN RECOVERY ERROR:", recoveryError);
+      }
+
+      setErrorMessage(getLocationErrorMessage(error));
     } finally {
       setActionLoading(null);
+
       setLocationLoading(false);
     }
   };
 
-  /* =========================================================
+  /* =======================================================
      CHECK OUT
-  ========================================================= */
+  ======================================================= */
 
   const handleCheckOut = async () => {
-    if (!isCheckedIn || isCheckedOut) return;
+    /*
+      Can't checkout without check-in.
+    */
+
+    if (!isCheckedIn) {
+      return;
+    }
+
+    /*
+      Can't checkout twice.
+    */
+
+    if (isCheckedOut) {
+      return;
+    }
+
+    /*
+      Prevent duplicate request.
+    */
+
+    if (actionLoading !== null) {
+      return;
+    }
 
     try {
       setErrorMessage("");
+      setSuccessMessage("");
+
       setActionLoading("checkOut");
+
       setLocationLoading(true);
+
+      /* -----------------------------------------------
+         GET LOCATION
+      ----------------------------------------------- */
 
       const location = await getCurrentLocation();
 
       setLocationLoading(false);
 
-      const response = await axios.post("/api/attendence/checkout", {
+      /* -----------------------------------------------
+         SEND CHECKOUT
+      ----------------------------------------------- */
+
+      await axios.post(CHECK_OUT_API, {
         latitude: location.latitude,
+
         longitude: location.longitude,
       });
 
-      setAttendance(response.data.attendence);
+      /*
+        Fetch fresh DB record.
 
-      console.log("CHECK-OUT SUCCESS:", response.data.attendence);
+        This gives us:
+        checkIn
+        checkOut
+        status
+        etc.
+      */
+
+      await fetchTodayAttendance();
+
+      setSuccessMessage("Check-out recorded successfully.");
     } catch (error) {
       console.error("CHECK-OUT ERROR:", error);
 
-      setErrorMessage(
-        "Unable to check out. Please allow location access and try again.",
-      );
+      /*
+        Recovery check.
+
+        Maybe DB saved checkout even though
+        frontend received an error.
+      */
+
+      try {
+        const response = await axios.get<AttendanceApiResponse>(MY_TODAY_API, {
+          params: {
+            _: Date.now(),
+          },
+        });
+
+        const existingAttendance = extractAttendance(response.data);
+
+        if (existingAttendance?.checkOut?.time) {
+          setAttendance(existingAttendance);
+
+          setSuccessMessage("Check-out was recorded successfully.");
+
+          setErrorMessage("");
+
+          return;
+        }
+      } catch (recoveryError) {
+        console.error("CHECK-OUT RECOVERY ERROR:", recoveryError);
+      }
+
+      setErrorMessage(getLocationErrorMessage(error));
     } finally {
       setActionLoading(null);
+
       setLocationLoading(false);
     }
   };
 
-  /* =========================================================
+  /* =======================================================
      STATUS
-  ========================================================= */
+  ======================================================= */
 
   const getStatus = () => {
+    if (initialLoading) {
+      return {
+        label: "Loading",
+        description: "Checking today's attendance...",
+        icon: RefreshCw,
+        className: "bg-slate-100 text-slate-500",
+      };
+    }
+
     if (!attendance) {
       return {
         label: "Not Started",
         description: "Your workday has not started yet.",
         icon: Circle,
-        className: "text-slate-500 bg-slate-100",
+        className: "bg-slate-100 text-slate-600",
       };
     }
 
@@ -270,7 +629,7 @@ export default function CheckInPage() {
         label: "Currently Working",
         description: "Your attendance session is active.",
         icon: TrendingUp,
-        className: "text-emerald-600 bg-emerald-50",
+        className: "bg-emerald-50 text-emerald-600",
       };
     }
 
@@ -279,7 +638,7 @@ export default function CheckInPage() {
         label: "Day Completed",
         description: "Your attendance has been completed.",
         icon: CheckCircle2,
-        className: "text-blue-600 bg-blue-50",
+        className: "bg-blue-50 text-blue-600",
       };
     }
 
@@ -287,7 +646,7 @@ export default function CheckInPage() {
       label: "Present",
       description: "Attendance marked successfully.",
       icon: BadgeCheck,
-      className: "text-emerald-600 bg-emerald-50",
+      className: "bg-emerald-50 text-emerald-600",
     };
   };
 
@@ -295,16 +654,16 @@ export default function CheckInPage() {
 
   const StatusIcon = status.icon;
 
-  /* =========================================================
+  /* =======================================================
      RENDER
-  ========================================================= */
+  ======================================================= */
 
   return (
     <main className="min-h-screen w-full bg-[#f6f7fb] px-4 py-5 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* =====================================================
+        {/* =================================================
             HEADER
-        ===================================================== */}
+        ================================================= */}
 
         <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -312,10 +671,15 @@ export default function CheckInPage() {
               <CalendarDays size={16} />
 
               <span>
-                {currentTime.toLocaleDateString([], {
+                {currentTime.toLocaleDateString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+
                   weekday: "long",
+
                   day: "numeric",
+
                   month: "long",
+
                   year: "numeric",
                 })}
               </span>
@@ -330,65 +694,85 @@ export default function CheckInPage() {
             </p>
           </div>
 
-          {/* LIVE CLOCK */}
+          {/* CURRENT TIME */}
 
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
-              <Clock3 size={19} className="text-slate-600" />
+          <div className="flex w-fit items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100">
+              <Clock3 size={20} className="text-slate-600" />
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
                 Current Time
               </p>
 
               <p className="text-lg font-bold tracking-tight text-slate-900">
-                {currentTime.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
+                {formatCurrentTime(currentTime)}
+              </p>
+
+              <p className="text-[10px] font-medium text-slate-400">
+                IST • Asia/Kolkata
               </p>
             </div>
           </div>
         </header>
 
-        {/* =====================================================
+        {/* =================================================
             ERROR
-        ===================================================== */}
+        ================================================= */}
 
         {errorMessage && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">
             <XCircle size={20} className="mt-0.5 shrink-0" />
 
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-semibold">Attendance action failed</p>
 
               <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setErrorMessage("")}
+              className="text-xs font-semibold text-red-500 transition hover:text-red-700"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
-        {/* =====================================================
-            MAIN GRID
-        ===================================================== */}
+        {/* =================================================
+            SUCCESS
+        ================================================= */}
+
+        {successMessage && (
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 shadow-sm">
+            <CheckCircle2 size={20} className="shrink-0" />
+
+            <p className="text-sm font-semibold">{successMessage}</p>
+          </div>
+        )}
+
+        {/* =================================================
+            MAIN CONTENT
+        ================================================= */}
 
         <section className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-          {/* ===================================================
-              TODAY'S ATTENDANCE CARD
-          =================================================== */}
+          {/* =================================================
+              TODAY ATTENDANCE
+          ================================================= */}
 
           <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            {/* Decorative background */}
+            {/* Background decoration */}
 
-            <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-blue-50 blur-3xl" />
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-50 blur-3xl" />
 
             <div className="relative">
-              {/* Card Header */}
+              {/* CARD HEADER */}
 
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-slate-400">
+                  <p className="text-xs font-bold tracking-[0.15em] text-slate-400">
                     TODAY'S ATTENDANCE
                   </p>
 
@@ -400,32 +784,37 @@ export default function CheckInPage() {
                 <div
                   className={`flex w-fit items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${status.className}`}
                 >
-                  <StatusIcon size={15} />
+                  <StatusIcon
+                    size={15}
+                    className={initialLoading ? "animate-spin" : ""}
+                  />
 
                   {status.label}
                 </div>
               </div>
 
-              {/* Status Description */}
+              {/* STATUS DESCRIPTION */}
 
               <p className="mt-4 max-w-xl text-sm leading-6 text-slate-500">
                 {status.description}
               </p>
 
-              {/* TIME GRID */}
+              {/* =================================================
+                  TIME CARDS
+              ================================================= */}
 
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                {/* Check In */}
+                {/* CHECK IN */}
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
                       <LogIn size={18} className="text-emerald-600" />
                     </div>
 
                     <div>
-                      <p className="text-xs font-medium text-slate-400">
-                        CHECK IN
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Check In
                       </p>
 
                       <p className="mt-1 text-lg font-bold text-slate-900">
@@ -435,17 +824,17 @@ export default function CheckInPage() {
                   </div>
                 </div>
 
-                {/* Check Out */}
+                {/* CHECK OUT */}
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100">
                       <LogOut size={18} className="text-red-600" />
                     </div>
 
                     <div>
-                      <p className="text-xs font-medium text-slate-400">
-                        CHECK OUT
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Check Out
                       </p>
 
                       <p className="mt-1 text-lg font-bold text-slate-900">
@@ -455,17 +844,17 @@ export default function CheckInPage() {
                   </div>
                 </div>
 
-                {/* Working Time */}
+                {/* WORKING TIME */}
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
                       <Timer size={18} className="text-blue-600" />
                     </div>
 
                     <div>
-                      <p className="text-xs font-medium text-slate-400">
-                        WORKING TIME
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Working Time
                       </p>
 
                       <p className="mt-1 text-lg font-bold text-slate-900">
@@ -481,21 +870,25 @@ export default function CheckInPage() {
               ================================================= */}
 
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                {/* CHECK IN BUTTON */}
+                {/* CHECK IN */}
 
                 <button
                   type="button"
                   onClick={handleCheckIn}
-                  disabled={actionLoading !== null || isCheckedIn}
-                  className="group flex min-h-[58px] items-center justify-center gap-3 rounded-2xl bg-slate-950 px-5 font-semibold text-white shadow-lg shadow-slate-950/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                  disabled={
+                    initialLoading || actionLoading !== null || isCheckedIn
+                  }
+                  className="group flex min-h-[58px] items-center justify-center gap-3 rounded-2xl bg-slate-950 px-5 font-semibold text-white shadow-lg shadow-slate-950/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                 >
                   {actionLoading === "checkIn" ? (
                     <>
                       <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
 
-                      {locationLoading
-                        ? "Getting location..."
-                        : "Checking in..."}
+                      <span>
+                        {locationLoading
+                          ? "Getting location..."
+                          : "Checking in..."}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -504,18 +897,21 @@ export default function CheckInPage() {
                         className="transition-transform group-hover:-translate-x-1"
                       />
 
-                      {isCheckedIn ? "Checked In" : "Check In"}
+                      <span>{isCheckedIn ? "Checked In" : "Check In"}</span>
                     </>
                   )}
                 </button>
 
-                {/* CHECK OUT BUTTON */}
+                {/* CHECK OUT */}
 
                 <button
                   type="button"
                   onClick={handleCheckOut}
                   disabled={
-                    actionLoading !== null || !isCheckedIn || isCheckedOut
+                    initialLoading ||
+                    actionLoading !== null ||
+                    !isCheckedIn ||
+                    isCheckedOut
                   }
                   className="group flex min-h-[58px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 font-semibold text-slate-900 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
                 >
@@ -523,9 +919,11 @@ export default function CheckInPage() {
                     <>
                       <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
 
-                      {locationLoading
-                        ? "Getting location..."
-                        : "Checking out..."}
+                      <span>
+                        {locationLoading
+                          ? "Getting location..."
+                          : "Checking out..."}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -534,13 +932,13 @@ export default function CheckInPage() {
                         className="transition-transform group-hover:translate-x-1"
                       />
 
-                      {isCheckedOut ? "Checked Out" : "Check Out"}
+                      <span>{isCheckedOut ? "Checked Out" : "Check Out"}</span>
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Location indicator */}
+              {/* LOCATION */}
 
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400">
                 <MapPin size={14} />
@@ -550,9 +948,9 @@ export default function CheckInPage() {
             </div>
           </div>
 
-          {/* ===================================================
-              SUMMARY CARD
-          =================================================== */}
+          {/* =================================================
+              SUMMARY
+          ================================================= */}
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
@@ -561,18 +959,18 @@ export default function CheckInPage() {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-slate-400">
+                <p className="text-xs font-bold tracking-[0.15em] text-slate-400">
                   ATTENDANCE SUMMARY
                 </p>
 
                 <h2 className="mt-1 text-xl font-bold text-slate-950">
-                  Today&apos;s Overview
+                  Today's Overview
                 </h2>
               </div>
             </div>
 
             <div className="mt-7 space-y-3">
-              {/* Status */}
+              {/* STATUS */}
 
               <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
@@ -588,7 +986,7 @@ export default function CheckInPage() {
                 </span>
               </div>
 
-              {/* Check In */}
+              {/* CHECK IN */}
 
               <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
@@ -604,7 +1002,7 @@ export default function CheckInPage() {
                 </span>
               </div>
 
-              {/* Check Out */}
+              {/* CHECK OUT */}
 
               <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
@@ -620,7 +1018,7 @@ export default function CheckInPage() {
                 </span>
               </div>
 
-              {/* Working */}
+              {/* WORKING */}
 
               <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
@@ -637,7 +1035,7 @@ export default function CheckInPage() {
               </div>
             </div>
 
-            {/* Bottom message */}
+            {/* MESSAGE */}
 
             <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-4">
               <p className="text-sm font-semibold text-blue-900">
@@ -656,36 +1054,47 @@ export default function CheckInPage() {
                     : "Check in to start recording your attendance."}
               </p>
             </div>
-          </div>
-        </section>
 
-        {/* =====================================================
-            ATTENDANCE HISTORY
-        ===================================================== */}
-
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-400">RECORDS</p>
-
-              <h2 className="mt-1 text-xl font-bold text-slate-950">
-                Attendance History
-              </h2>
-            </div>
+            {/* REFRESH */}
 
             <button
               type="button"
-              className="flex w-fit items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              onClick={() => fetchTodayAttendance(true)}
+              disabled={actionLoading !== null}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <CalendarDays size={16} />
-              View Calendar
+              <RefreshCw
+                size={15}
+                className={actionLoading === "refresh" ? "animate-spin" : ""}
+              />
+              Refresh Attendance
             </button>
+          </div>
+        </section>
+
+        {/* =================================================
+            TODAY'S RECORD
+        ================================================= */}
+
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 p-6 sm:p-7">
+            <p className="text-xs font-bold tracking-[0.15em] text-slate-400">
+              RECORDS
+            </p>
+
+            <h2 className="mt-1 text-xl font-bold text-slate-950">
+              Today's Attendance Record
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Your attendance activity for today.
+            </p>
           </div>
 
           {/* DESKTOP TABLE */}
 
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[700px]">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70 text-left">
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -739,7 +1148,7 @@ export default function CheckInPage() {
                   </tr>
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-14 text-center">
                       <div className="mx-auto flex max-w-sm flex-col items-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
                           <CalendarDays size={21} className="text-slate-400" />
@@ -750,8 +1159,7 @@ export default function CheckInPage() {
                         </p>
 
                         <p className="mt-1 text-sm text-slate-400">
-                          Your attendance record will appear here after you
-                          check in.
+                          Check in to create your attendance record.
                         </p>
                       </div>
                     </td>
@@ -763,7 +1171,7 @@ export default function CheckInPage() {
 
           {/* MOBILE RECORD */}
 
-          <div className="space-y-3 p-4 md:hidden">
+          <div className="p-4 md:hidden">
             {attendance ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <div className="flex items-start justify-between gap-3">

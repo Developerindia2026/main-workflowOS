@@ -1,5 +1,31 @@
 "use client";
 
+interface AttendenceProp {
+  _id: string;
+  date: string;
+
+  employee: {
+    username: string;
+    department?: string;
+    designation?: string;
+  };
+
+  checkIn?: {
+    time?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+
+  checkOut?: {
+    time?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+
+  status: string;
+  workingTime?: number;
+}
+
 import {
   Users,
   Clock3,
@@ -14,18 +40,20 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 
 export default function PresentEmployees() {
-  const [attendence, setAttendence] = useState(null);
+  const [attendence, setAttendence] = useState<AttendenceProp[]>([]);
 
   const GetAttendence = async () => {
     try {
       const response = await axios.get(`/api/attendence/today`);
-      console.log(response.data.attendence);
+      setAttendence(response.data.attendence);
     } catch (error) {
       console.log(error);
     }
   };
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    GetAttendence();
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-slate-100 px-4 py-6 sm:px-6 lg:px-10">
@@ -68,7 +96,10 @@ export default function PresentEmployees() {
                 Currently Present
               </p>
 
-              <p className="text-xl font-bold text-slate-900">1 Employee</p>
+              <p className="text-xl font-bold text-slate-900">
+                {attendence.length} &nbsp;
+                <span>Employee</span>
+              </p>
             </div>
           </div>
         </div>
@@ -123,48 +154,74 @@ export default function PresentEmployees() {
               </thead>
 
               <tbody className="divide-y divide-slate-100">
+                {attendence.map((employee) => {
+                  return (
+                    <tr
+                      className="transition hover:bg-slate-50"
+                      key={employee._id}
+                    >
+                      {/* Name */}
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+                            {employee.employee.username.charAt(0)}
+                          </div>
+
+                          <div>
+                            <p className="font-semibold text-slate-900">
+                              {employee?.employee?.username}
+                            </p>
+
+                            <p className="text-xs text-slate-400">Employee</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Checkin */}
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                          <Clock3 size={16} className="text-slate-400" />
+                          {employee?.checkIn?.time &&
+                            new Date(employee.checkIn.time).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              },
+                            )}
+                        </div>
+                      </td>
+
+                      {/* Checkout */}
+                      <td className="px-6 py-5">
+                        <span className="text-sm text-slate-400">
+                          {(employee?.checkOut?.time &&
+                            new Date(employee.checkOut.time).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              },
+                            )) ??
+                            ""}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-5">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                          {employee?.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {/* Employee Row */}
-                <tr className="transition hover:bg-slate-50">
-                  {/* Name */}
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
-                        D
-                      </div>
-
-                      <div>
-                        <p className="font-semibold text-slate-900">
-                          Deepanshu
-                        </p>
-
-                        <p className="text-xs text-slate-400">Employee</p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Checkin */}
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                      <Clock3 size={16} className="text-slate-400" />
-                      09:15 AM
-                    </div>
-                  </td>
-
-                  {/* Checkout */}
-                  <td className="px-6 py-5">
-                    <span className="text-sm text-slate-400">
-                      Not checked out
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-6 py-5">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      Present
-                    </span>
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>

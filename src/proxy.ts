@@ -2,6 +2,20 @@ import { NextResponse, NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname === "/admin/login") {
+    return NextResponse.next();
+  }
+
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    const token = request.cookies.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+  }
+
   const token = request.cookies.get("token")?.value;
 
   if (!token) {

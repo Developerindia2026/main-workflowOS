@@ -14,12 +14,14 @@ export async function GET(request: Request) {
     const endDay = new Date(today);
     endDay.setHours(23, 59, 59, 999);
 
-    const getAttendence = await attendence.findOne({
-      createdAt: {
-        $gte: startDay,
-        $lte: endDay,
-      },
-    });
+    const getAttendence = await attendence
+      .find({
+        createdAt: {
+          $gte: startDay,
+          $lte: endDay,
+        },
+      })
+      .populate("employee");
 
     return NextResponse.json(
       { message: "attendence getted", attendence: getAttendence },
