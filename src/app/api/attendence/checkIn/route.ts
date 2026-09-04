@@ -1,95 +1,145 @@
-import attendence from "@/models/attendence";
+import Attendance from "@/models/attendence";
 import jwt from "jsonwebtoken";
 import connectDB from "@/lib/mongoose";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
-  const { latitude, longitude } = await request.json();
-
-  if (typeof latitude !== "number" || typeof longitude !== "number") {
-    return NextResponse.json(
-      { Message: "please give a valid latitude and longitude" },
-      { status: 400 },
-    );
-  }
-
   try {
-    // FIND USER
+    const { latitude, longitude } = await request.json();
 
+    // Validate location
+    if (typeof latitude !== "number" || typeof longitude !== "number") {
+      return NextResponse.json(
+        {
+          message: "Please provide a valid latitude and longitude",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Connect database
     await connectDB();
 
+    // Get token
     const cookieStore = await cookies();
 
     const token = cookieStore.get("token")?.value;
 
     if (!token) {
-      return NextResponse.json({ messgae: "token not found" }, { status: 400 });
-    }
-
-    const decode = jwt.verify(token, process.env.JWT_KEY!) as {
-      id: string;
-    };
-
-    const userID = decode.id;
-
-    if (!userID) {
       return NextResponse.json(
-        { message: "user id not founded" },
-        { status: 400 },
+        {
+          message: "Token not found",
+        },
+        { status: 401 },
       );
     }
 
-    // FIND THE EXISTING ATTENDENCE OR NOT
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_KEY!) as {
+      id: string;
+    };
 
-    const today = new Date();
+    const userID = decoded.id;
 
-    const startDay = new Date(today);
-    startDay.setHours(0, 0, 0, 0);
+    if (!userID) {
+      return NextResponse.json(
+        {
+          message: "User ID not found",
+        },
+        { status: 401 },
+      );
+    }
 
-    const endDay = new Date(today);
-    endDay.setHours(23, 59, 59, 999);
+    // =====================================================
+    // TODAY IN IST
+    // =====================================================
 
-    const existingUser = await attendence.findOne({
+    const now = new Date();
+
+    const istDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+
+    // Start of today in IST
+    const startDay = new Date(`${istDate}T00:00:00+05:30`);
+
+    // Start of tomorrow in IST
+    const nextDay = new Date(startDay);
+
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+    // =====================================================
+    // CHECK EXISTING ATTENDANCE
+    // =====================================================
+
+    const existingAttendance = await Attendance.findOne({
       employee: userID,
-      createdAt: {
+      date: {
         $gte: startDay,
-        $lte: endDay,
+        $lt: nextDay,
       },
     });
 
-    if (existingUser) {
+    if (existingAttendance) {
       return NextResponse.json(
         {
-          message: "user already logined in the portal no re login issued",
-          attendence: existingUser,
+          message: "You have already checked in today.",
+          attendence: existingAttendance,
         },
         { status: 409 },
       );
     }
 
-    // adding new first user
+    // =====================================================
+    // CREATE ATTENDANCE
+    // =====================================================
 
-    const addCheckIn = await attendence.create({
+    const attendance = await Attendance.create({
       employee: userID,
-      date: today,
+
+      date: now,
+
       checkIn: {
-        time: today,
+        time: now,
+
         location: {
-          longitude: longitude,
-          latitude: latitude,
+          latitude,
+          longitude,
         },
       },
+
       status: "present",
+
       workingTime: 0,
     });
 
     return NextResponse.json(
-      { message: "checkin Successfully done", attendence: addCheckIn },
+      {
+        message: "Check-in successfully done.",
+
+        // IMPORTANT:
+        // Frontend will use this directly
+        attendence: attendance,
+
+        // Also return correctly-spelled version
+        attendance,
+      },
       { status: 201 },
     );
   } catch (error) {
-    console.log(error);
-    return NextResponse.json({ message: "invalid" }, { status: 500 });
+    console.error("CHECK-IN ERROR:", error);
+
+    return NextResponse.json(
+      {
+        message: "Check-in failed.",
+
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }
