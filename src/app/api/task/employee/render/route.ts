@@ -9,9 +9,13 @@ export async function GET(request: Request) {
   try {
     const cookieStore = await cookies();
 
-    const token = cookieStore.get("token");
+    const token = cookieStore.get("token")?.value;
 
-    const decoded = Jwt.verify(token, process.env.JWT_KEY!) as unknown as {
+    if (!token) {
+      return NextResponse.json({ message: "invalid" }, { status: 400 });
+    }
+
+    const decoded = Jwt.verify(token, process.env.JWT_KEY!) as {
       id: string;
     };
 

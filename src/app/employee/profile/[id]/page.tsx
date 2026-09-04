@@ -113,7 +113,11 @@ export default function ProfileEdit() {
             <button
               type="submit"
               className="flex items-center gap-2 rounded-xl bg-[#030A24] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-[#07123d]"
-              onClick={() => editDataRequest(id)}
+              onClick={() => {
+                if (typeof id === "string") {
+                  editDataRequest(id);
+                }
+              }}
             >
               <Save size={16} />
               Save Changes
