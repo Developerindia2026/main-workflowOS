@@ -25,7 +25,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Notification */}
-            <Link href="admin/announcement">
+            <Link href="/admin/announcement">
               <button
                 type="button"
                 className="
