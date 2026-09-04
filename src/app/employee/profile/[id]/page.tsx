@@ -58,7 +58,7 @@ export default function ProfileEdit() {
     });
   };
 
-  const editDataRequest = async (id) => {
+  const editDataRequest = async (id: string) => {
     try {
       const response = await axios.post(`/api/profile/${id}`, editData);
       console.log(response.data);
