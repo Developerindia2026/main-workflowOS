@@ -12,6 +12,7 @@ interface getAnnocuementProp {
   categtory: string;
   priority: string;
   details: string;
+  _id: string;
 }
 
 import {
@@ -29,6 +30,7 @@ import {
   FileText,
   ChevronDown,
   Users,
+  Trash,
 } from "lucide-react";
 
 import axios from "axios";
@@ -45,6 +47,15 @@ export default function Announcement() {
   const [annoucement, setAnnoucement] = useState<getAnnocuementProp[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const deleteNotification = async (id: string) => {
+    try {
+      const response = await axios.delete(`/api/annoucement/delete/${id}`);
+      GetAnnoucement();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleInput = (
     event: React.ChangeEvent<
@@ -335,21 +346,53 @@ export default function Announcement() {
               {/* ================= UPDATE 1 ================= */}
               {annoucement.map((annoucement) => {
                 return (
-                  <article className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-xl hover:shadow-slate-200/50 sm:p-6">
+                  <article
+                    className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-xl hover:shadow-slate-200/50 sm:p-6"
+                    key={annoucement._id}
+                  >
                     <div className="flex gap-4">
                       <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 sm:flex">
                         <Megaphone size={20} />
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <div className="mb-3 flex w-full flex-wrap items-center gap-2">
+                          {/* Priority */}
                           <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-600">
                             {annoucement.priority}
                           </span>
 
+                          {/* Time */}
                           <span className="text-xs text-slate-400">
                             • 2 hours ago
                           </span>
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            aria-label="Delete announcement"
+                            className="
+      ml-auto
+      inline-flex h-8 w-8 shrink-0 items-center justify-center
+      rounded-lg
+      text-slate-400
+      transition-all duration-200
+      hover:bg-red-50
+      hover:text-red-500
+      active:scale-95
+      focus:outline-none
+      focus:ring-2
+      focus:ring-red-100
+      sm:h-9 sm:w-9
+    "
+                            onClick={() => {
+                              if (annoucement._id) {
+                                deleteNotification(annoucement._id);
+                              }
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </button>
                         </div>
 
                         <h4 className="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">
