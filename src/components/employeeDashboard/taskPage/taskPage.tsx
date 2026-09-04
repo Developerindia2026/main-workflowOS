@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 interface TaskProp {
   attachment: string;
-  deadline: Date;
+  deadline: string;
   employee: string;
   task: string;
   status: string;
@@ -28,7 +28,7 @@ export default function TaskPage() {
     }
   };
 
-  const updateTask = async (id) => {
+  const updateTask = async (id: string) => {
     try {
       router.push(`/employee/task/${id}`);
     } catch (error) {
