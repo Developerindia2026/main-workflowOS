@@ -1,4 +1,45 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+
+interface TaskProp {
+  attachment: string;
+  deadline: Date;
+  employee: string;
+  task: string;
+  status: string;
+  _id: string;
+}
+
 export default function TaskPage() {
+  const [task, setTask] = useState<TaskProp[]>([]);
+
+  const router = useRouter();
+
+  const getTask = async () => {
+    try {
+      const response = await axios.get(`/api/task/employee/render`);
+      console.log(response.data.data);
+      setTask(response.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const updateTask = async (id) => {
+    try {
+      router.push(`/employee/task/${id}`);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getTask();
+  }, []);
+
   const label = { slotProps: { input: { "aria-label": "Checkbox demo" } } };
 
   return (
@@ -24,7 +65,7 @@ export default function TaskPage() {
               </th>
 
               <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Assigned Date
+                Deadline
               </th>
 
               <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -38,96 +79,40 @@ export default function TaskPage() {
           </thead>
 
           <tbody>
-            <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/60">
-              <td className="px-5 py-5">
-                <div>
-                  <p className="font-medium text-[#030A24]">Fix Login API</p>
+            {task.map((task) => {
+              return (
+                <tr
+                  className="border-b border-slate-100 transition-colors hover:bg-slate-50/60"
+                  key={task._id}
+                >
+                  <td className="px-5 py-5">
+                    <div>
+                      <p className="font-medium text-[#030A24]">{task.task}</p>
+                    </div>
+                  </td>
 
-                  <p className="mt-1 text-sm text-slate-500">
-                    Resolve authentication and token issues.
-                  </p>
-                </div>
-              </td>
+                  <td className="whitespace-nowrap px-5 py-5 text-sm text-slate-600">
+                    {task.deadline}
+                  </td>
 
-              <td className="whitespace-nowrap px-5 py-5 text-sm text-slate-600">
-                17 Aug 2026
-              </td>
+                  <td className="px-5 py-5">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                      {task.status}
+                    </span>
+                  </td>
 
-              <td className="px-5 py-5">
-                <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600">
-                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                  In Process
-                </span>
-              </td>
-
-              <td className="px-5 py-5">
-                <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
-                  Update
-                </button>
-              </td>
-            </tr>
-
-            <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50/60">
-              <td className="px-5 py-5">
-                <div>
-                  <p className="font-medium text-[#030A24]">
-                    Update Dashboard UI
-                  </p>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Improve dashboard layout and responsiveness.
-                  </p>
-                </div>
-              </td>
-
-              <td className="whitespace-nowrap px-5 py-5 text-sm text-slate-600">
-                16 Aug 2026
-              </td>
-
-              <td className="px-5 py-5">
-                <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-600">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                  Pending
-                </span>
-              </td>
-
-              <td className="px-5 py-5">
-                <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
-                  Update
-                </button>
-              </td>
-            </tr>
-
-            <tr className="transition-colors hover:bg-slate-50/60">
-              <td className="px-5 py-5">
-                <div>
-                  <p className="font-medium text-[#030A24]">
-                    Create Employee Report
-                  </p>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Prepare the monthly employee activity report.
-                  </p>
-                </div>
-              </td>
-
-              <td className="whitespace-nowrap px-5 py-5 text-sm text-slate-600">
-                15 Aug 2026
-              </td>
-
-              <td className="px-5 py-5">
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Completed
-                </span>
-              </td>
-
-              <td className="px-5 py-5">
-                <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
-                  View
-                </button>
-              </td>
-            </tr>
+                  <td className="px-5 py-5">
+                    <button
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                      onClick={() => updateTask(task._id)}
+                    >
+                      Update
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

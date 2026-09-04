@@ -14,6 +14,7 @@ interface EditDataProp {
   designation: string;
   joiningDate: Date;
   profileImage: string;
+  _id: string;
 }
 
 import {
@@ -40,6 +41,32 @@ export default function ProfileEdit() {
   const id = params.id;
 
   const [editData, setEditData] = useState<EditDataProp | null>(null);
+
+  const handleInput = async (
+    event: React.ChangeEvent<
+      HTMLTextAreaElement | HTMLInputElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = event.target;
+
+    setEditData((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        [name]: value,
+      };
+    });
+  };
+
+  const editDataRequest = async (id) => {
+    try {
+      const response = await axios.post(`/api/profile/${id}`, editData);
+      console.log(response.data);
+      getEditData();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   // GET EDIT DATA
   const getEditData = async () => {
@@ -86,6 +113,7 @@ export default function ProfileEdit() {
             <button
               type="submit"
               className="flex items-center gap-2 rounded-xl bg-[#030A24] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-[#07123d]"
+              onClick={() => editDataRequest(id)}
             >
               <Save size={16} />
               Save Changes
@@ -200,8 +228,10 @@ export default function ProfileEdit() {
                     />
 
                     <input
+                      onChange={handleInput}
                       type="text"
                       value={editData?.username}
+                      name="username"
                       className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#030A24] focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                     />
                   </div>
@@ -220,6 +250,8 @@ export default function ProfileEdit() {
                     />
 
                     <input
+                      onChange={handleInput}
+                      name="email"
                       type="email"
                       value={editData?.email}
                       className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#030A24] focus:bg-white focus:ring-4 focus:ring-slate-900/5"
@@ -240,6 +272,8 @@ export default function ProfileEdit() {
                     />
 
                     <input
+                      onChange={handleInput}
+                      name="phone"
                       type="text"
                       value={editData?.phone}
                       className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#030A24] focus:bg-white focus:ring-4 focus:ring-slate-900/5"

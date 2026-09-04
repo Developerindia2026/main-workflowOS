@@ -20,8 +20,13 @@ const taskSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  status: {
+    type: String,
+    enum: ["On-going, Completed, Declined"],
+    default: "On-going",
+  },
 });
 
-const task = mongoose.model("task", taskSchema);
+const task = mongoose.models.task || mongoose.model("task", taskSchema);
 
 export default task;
