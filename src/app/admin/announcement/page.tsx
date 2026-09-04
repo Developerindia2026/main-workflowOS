@@ -70,8 +70,10 @@ export default function Announcement() {
     try {
       const response = await axios.post("/api/annoucement", formData);
       console.log(response.data.data);
+      GetAnnoucement();
     } catch (error) {
       console.log(error);
+    } finally {
       setIsLoading(false);
     }
   };
