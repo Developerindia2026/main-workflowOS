@@ -1,4 +1,5 @@
 import { BellDot, UserShield } from "lucide-react";
+import Link from "next/link";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -12,19 +13,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="mx-auto flex min-h-[76px] w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           {/* Logo */}
           <div className="w-[90px] sm:w-[140px] lg:w-[110px]">
-            <img
-              src="/dark-logo.png"
-              alt="Logo"
-              className="h-auto w-full object-contain"
-            />
+            <Link href="/admin">
+              <img
+                src="/dark-logo.png"
+                alt="Logo"
+                className="h-auto w-full object-contain"
+              />
+            </Link>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Notification */}
-            <button
-              type="button"
-              className="
+            <Link href="admin/announcement">
+              <button
+                type="button"
+                className="
                 group flex items-center justify-center gap-2
                 rounded-xl border border-gray-200
                 bg-white px-3 py-2.5
@@ -38,19 +42,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 active:scale-95
                 sm:px-4
               "
-            >
-              <BellDot
-                size={19}
-                className="transition-transform duration-300 group-hover:rotate-[-8deg]"
-              />
+              >
+                <BellDot
+                  size={19}
+                  className="transition-transform duration-300 group-hover:rotate-[-8deg]"
+                />
 
-              <span className="hidden sm:inline">Notification</span>
-            </button>
+                <span className="hidden sm:inline">Notification</span>
+              </button>
+            </Link>
 
             {/* Profile */}
-            <button
-              type="button"
-              className="
+            <Link href="/admin/profile">
+              <button
+                type="button"
+                className="
                 group flex items-center justify-center gap-2
                 rounded-xl border border-gray-200
                 bg-gray-900 px-3 py-2.5
@@ -63,14 +69,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 active:scale-95
                 sm:px-4
               "
-            >
-              <UserShield
-                size={19}
-                className="transition-transform duration-300 group-hover:scale-110"
-              />
+              >
+                <UserShield
+                  size={19}
+                  className="transition-transform duration-300 group-hover:scale-110"
+                />
 
-              <span className="hidden sm:inline">Profile</span>
-            </button>
+                <span className="hidden sm:inline">Profile</span>
+              </button>
+            </Link>
           </div>
         </div>
       </nav>
