@@ -35,6 +35,7 @@ import {
 
 import axios from "axios";
 import React, { useState, useEffect } from "react";
+import attendence from "@/models/attendence";
 
 export default function Announcement() {
   const [formData, setFormData] = useState<AnnoucmentDataProp>({
@@ -343,84 +344,72 @@ export default function Announcement() {
             </div>
 
             <div className="space-y-4">
-              {/* ================= UPDATE 1 ================= */}
-              {annoucement.map((annoucement) => {
-                return (
-                  <article
-                    className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-xl hover:shadow-slate-200/50 sm:p-6"
-                    key={annoucement._id}
-                  >
-                    <div className="flex gap-4">
-                      <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 sm:flex">
-                        <Megaphone size={20} />
-                      </div>
+              <div className="annocement-history space-y-3">
+                {annoucement.map((items) => {
+                  return (
+                    <div
+                      key={items._id}
+                      className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:shadow-md dark:border-gray-400 dark:bg-gray-800 sm:p-5"
+                    >
+                      {/* Left Accent */}
+                      <div
+                        className={`absolute left-0 top-0 h-full w-1 ${
+                          items.priority === "High"
+                            ? "bg-red-500"
+                            : items.priority === "Medium"
+                              ? "bg-yellow-500"
+                              : "bg-green-500"
+                        }`}
+                      />
 
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-3 flex w-full flex-wrap items-center gap-2">
-                          {/* Priority */}
-                          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-600">
-                            {annoucement.priority}
-                          </span>
+                      <div className="flex items-start justify-between gap-3 pl-2">
+                        {/* Announcement Content */}
+                        <div className="min-w-0 flex-1">
+                          {/* Header */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white sm:text-lg">
+                              {items.title}
+                            </h3>
 
-                          {/* Time */}
-                          <span className="text-xs text-slate-400">
-                            • 2 hours ago
-                          </span>
-
-                          {/* Delete Button */}
-                          <button
-                            type="button"
-                            aria-label="Delete announcement"
-                            className="
-      ml-auto
-      inline-flex h-8 w-8 shrink-0 items-center justify-center
-      rounded-lg
-      text-slate-400
-      transition-all duration-200
-      hover:bg-red-50
-      hover:text-red-500
-      active:scale-95
-      focus:outline-none
-      focus:ring-2
-      focus:ring-red-100
-      sm:h-9 sm:w-9
-    "
-                            onClick={() => {
-                              if (annoucement._id) {
-                                deleteNotification(annoucement._id);
-                              }
-                            }}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </button>
-                        </div>
-
-                        <h4 className="text-lg font-bold text-slate-900 transition group-hover:text-blue-600">
-                          {annoucement.title}
-                        </h4>
-
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
-                          {annoucement.details}
-                        </p>
-
-                        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex items-center gap-2 text-xs text-slate-400">
-                            <UserRound size={14} />
-                            {annoucement.categtory}
+                            {/* Priority Badge */}
+                            <span
+                              className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                items.priority === "High"
+                                  ? "bg-red-50 text-red-600 ring-1 ring-inset ring-red-200 dark:bg-red-950/30 dark:text-red-400 dark:ring-red-900"
+                                  : items.priority === "Medium"
+                                    ? "bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:ring-yellow-900"
+                                    : "bg-green-50 text-green-600 ring-1 ring-inset ring-green-200 dark:bg-green-950/30 dark:text-green-400 dark:ring-green-900"
+                              }`}
+                            >
+                              {items.priority}
+                            </span>
                           </div>
+
+                          {/* Details */}
+                          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-400 sm:text-[15px]">
+                            {items.details}
+                          </p>
                         </div>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => {
+                            if (items._id) {
+                              deleteNotification(items._id);
+                            }
+                          }}
+                          type="button"
+                          aria-label={`Delete announcement ${items.title}`}
+                          className="shrink-0 rounded-lg p-2 text-gray-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                        >
+                          <Trash className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </button>
                       </div>
                     </div>
-                  </article>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-
-            {/* Load More */}
-            <button className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-              Load More Announcements
-              <ChevronRight size={16} />
-            </button>
           </section>
 
           {/* ================= SIDEBAR ================= */}
