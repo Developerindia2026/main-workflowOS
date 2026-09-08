@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import task from "@/models/task";
+import document from "@/models/document";
 import connectDB from "@/lib/mongoose";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
     const userID = decoded.id;
 
-    const getDocuments = await task.find({ employee: userID });
+    const getDocuments = await document.find({ user: userID });
 
     return NextResponse.json(
       { message: "task founded", data: getDocuments },

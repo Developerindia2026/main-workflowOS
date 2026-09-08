@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import attendence from "@/models/attendence";
 import connectDB from "@/lib/mongoose";
 import Jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 
 export async function GET(request: Request) {
@@ -14,30 +13,49 @@ export async function GET(request: Request) {
     const token = cookieStore.get("token");
 
     if (!token) {
-      return NextResponse.json({ message: "token not found" }, { status: 400 });
+      return NextResponse.json({ message: "Token not found" }, { status: 401 });
     }
 
-    const decoded = Jwt.verify(token?.value, process.env.JWT_KEY!) as {
+    const decoded = Jwt.verify(token.value, process.env.JWT_KEY!) as {
       id: string;
     };
 
-    if (!decoded) {
+    if (!decoded?.id) {
       return NextResponse.json(
-        { message: "user not authenticated" },
-        { status: 404 },
+        { message: "User not authenticated" },
+        { status: 401 },
       );
     }
 
-    const userID = await decoded.id;
+    const userID = decoded.id;
 
-    const getAttendence = await attendence.find({ employee: userID });
+    // Start of today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // End of today
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get ONLY today's attendance
+    const getAttendence = await attendence.findOne({
+      employee: userID,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    });
 
     return NextResponse.json(
-      { message: "attendence return ", data: getAttendence },
+      {
+        message: "Today's attendance returned",
+        data: getAttendence ? [getAttendence] : [],
+      },
       { status: 200 },
     );
   } catch (error) {
-    console.log(error);
-    return NextResponse.json({ message: "error by backend" }, { status: 500 });
+    console.error("Attendance GET error:", error);
+
+    return NextResponse.json({ message: "Error by backend" }, { status: 500 });
   }
 }

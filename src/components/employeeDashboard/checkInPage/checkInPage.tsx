@@ -28,6 +28,16 @@ export default function Checkin() {
   const [alert, setAlert] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [action, setAction] = useState<"checkin" | "checkout" | null>(null);
+  const [history, setHistory] = useState<attendenceProp[]>([]);
+
+  const getHistory = async () => {
+    try {
+      const response = await axios.get(`/api/attendence/history`);
+      setHistory(response.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const getAttendence = async () => {
     try {
@@ -56,7 +66,8 @@ export default function Checkin() {
             });
 
             setAlert(true);
-            await getAttendence();
+            getAttendence();
+            getHistory();
 
             setTimeout(() => {
               setAlert(false);
@@ -96,8 +107,8 @@ export default function Checkin() {
               latitude,
               longitude,
             });
-
-            await getAttendence();
+            getAttendence();
+            getHistory();
 
             setAlert(true);
 
@@ -126,6 +137,7 @@ export default function Checkin() {
 
   useEffect(() => {
     getAttendence();
+    getHistory();
   }, []);
 
   const todayRecord = attendence[0];
@@ -377,95 +389,158 @@ export default function Checkin() {
         </div>
 
         {/* Attendance Records */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {/* Attendance History */}
+        <section className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {/* Section Header */}
-          <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                Attendance Records
-              </h2>
+          <div className="border-b border-slate-100 px-5 py-5 sm:px-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                    <WorkHistoryIcon sx={{ fontSize: 19 }} />
+                  </div>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Your attendance history and working hours.
-              </p>
-            </div>
+                  <h2 className="text-lg font-bold tracking-tight text-slate-900">
+                    Attendance History
+                  </h2>
+                </div>
 
-            <div className="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-              {attendence.length}{" "}
-              {attendence.length === 1 ? "Record" : "Records"}
+                <p className="mt-2 text-sm leading-5 text-slate-500">
+                  View your previous attendance records and working hours.
+                </p>
+              </div>
+
+              {/* Record Count */}
+              <div className="flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3.5 py-2 text-xs font-semibold text-slate-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                {history?.length} {history?.length === 1 ? "Record" : "Records"}
+              </div>
             </div>
           </div>
 
-          {/* Desktop Table */}
+          {/* ================= DESKTOP TABLE ================= */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full border-collapse">
+            <table className="w-full min-w-[760px] border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-left">
-                  <th className="whitespace-nowrap px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-slate-100 bg-slate-50/70 text-left">
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Date
                   </th>
 
-                  <th className="whitespace-nowrap px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Check In
                   </th>
 
-                  <th className="whitespace-nowrap px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Check Out
                   </th>
 
-                  <th className="whitespace-nowrap px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Status
                   </th>
 
-                  <th className="whitespace-nowrap px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     Working Hours
                   </th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {attendence.length > 0 ? (
-                  attendence.map((data, index) => (
-                    <tr
-                      key={`${data.date}-${index}`}
-                      className="transition hover:bg-slate-50/70"
-                    >
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-700">
-                        {formatDate(data.date)}
-                      </td>
+                {history.length > 0 ? (
+                  history.map((data, index) => {
+                    const isPresent = data.status?.toLowerCase() === "present";
 
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
-                        {formatTime(data.checkIn?.time)}
-                      </td>
+                    return (
+                      <tr
+                        key={`${data.date}-${index}`}
+                        className="group transition-colors hover:bg-slate-50/70"
+                      >
+                        {/* Date */}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-600">
+                              <CalendarTodayIcon sx={{ fontSize: 16 }} />
+                            </div>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-600">
-                        {formatTime(data.checkOut?.time)}
-                      </td>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800">
+                                {formatDate(data.date)}
+                              </p>
 
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                            data.status?.toLowerCase() === "present"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {data.status}
-                        </span>
-                      </td>
+                              <p className="mt-0.5 text-[11px] text-slate-400">
+                                Attendance day
+                              </p>
+                            </div>
+                          </div>
+                        </td>
 
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-700">
-                        {formatWorkingTime(data.workingTime)}
-                      </td>
-                    </tr>
-                  ))
+                        {/* Check In */}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+
+                            <span className="text-sm font-medium text-slate-700">
+                              {formatTime(data.checkIn?.time)}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Check Out */}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-rose-500" />
+
+                            <span className="text-sm font-medium text-slate-700">
+                              {formatTime(data.checkOut?.time)}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${
+                              isPresent
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isPresent ? "bg-emerald-500" : "bg-slate-400"
+                              }`}
+                            />
+
+                            {data.status || "Unknown"}
+                          </span>
+                        </td>
+
+                        {/* Working Hours */}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="text-sm font-bold text-slate-800">
+                            {formatWorkingTime(data.workingTime)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-12 text-center text-sm text-slate-500"
-                    >
-                      No attendance records available.
+                    <td colSpan={5} className="px-6 py-16">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                          <WorkHistoryIcon sx={{ fontSize: 25 }} />
+                        </div>
+
+                        <h3 className="mt-4 text-sm font-bold text-slate-800">
+                          No attendance history
+                        </h3>
+
+                        <p className="mt-1 max-w-sm text-xs leading-5 text-slate-400">
+                          Your previous attendance records will appear here once
+                          you start checking in.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -473,88 +548,123 @@ export default function Checkin() {
             </table>
           </div>
 
-          {/* Mobile Cards */}
+          {/* ================= MOBILE CARDS ================= */}
           <div className="divide-y divide-slate-100 md:hidden">
-            {attendence.length > 0 ? (
-              attendence.map((data, index) => (
-                <div
-                  key={`${data.date}-${index}`}
-                  className="p-5 transition hover:bg-slate-50/70"
-                >
-                  {/* Card Top */}
-                  <div className="mb-5 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {formatDate(data.date)}
-                      </p>
+            {history.length > 0 ? (
+              history?.map((data, index) => {
+                const isPresent = data.status?.toLowerCase() === "present";
 
-                      <p className="mt-1 text-xs text-slate-400">
-                        Attendance record
-                      </p>
+                return (
+                  <div
+                    key={`${data.date}-${index}`}
+                    className="p-5 transition-colors hover:bg-slate-50/60"
+                  >
+                    {/* Card Header */}
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                          <CalendarTodayIcon sx={{ fontSize: 18 }} />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-900">
+                            {formatDate(data.date)}
+                          </p>
+
+                          <p className="mt-0.5 text-[11px] text-slate-400">
+                            Attendance record
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                          isPresent
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isPresent ? "bg-emerald-500" : "bg-slate-400"
+                          }`}
+                        />
+
+                        {data.status || "Unknown"}
+                      </span>
                     </div>
 
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        data.status?.toLowerCase() === "present"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
-                      {data.status}
-                    </span>
+                    {/* Time Details */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Check In */}
+                      <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5">
+                        <div className="mb-2 flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Check In
+                          </p>
+                        </div>
+
+                        <p className="text-sm font-bold text-slate-800">
+                          {formatTime(data.checkIn?.time)}
+                        </p>
+                      </div>
+
+                      {/* Check Out */}
+                      <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5">
+                        <div className="mb-2 flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Check Out
+                          </p>
+                        </div>
+
+                        <p className="text-sm font-bold text-slate-800">
+                          {formatTime(data.checkOut?.time)}
+                        </p>
+                      </div>
+
+                      {/* Working Hours */}
+                      <div className="col-span-2 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3.5">
+                        <div className="mb-2 flex items-center gap-1.5">
+                          <WorkHistoryIcon
+                            sx={{ fontSize: 14 }}
+                            className="text-indigo-500"
+                          />
+
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                            Working Hours
+                          </p>
+                        </div>
+
+                        <p className="text-sm font-bold text-indigo-700">
+                          {formatWorkingTime(data.workingTime)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Card Details */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-slate-50 p-3">
-                      <p className="mb-1 text-xs font-medium text-slate-400">
-                        CHECK IN
-                      </p>
-
-                      <p className="text-sm font-semibold text-slate-800">
-                        {formatTime(data.checkIn?.time)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl bg-slate-50 p-3">
-                      <p className="mb-1 text-xs font-medium text-slate-400">
-                        CHECK OUT
-                      </p>
-
-                      <p className="text-sm font-semibold text-slate-800">
-                        {formatTime(data.checkOut?.time)}
-                      </p>
-                    </div>
-
-                    <div className="col-span-2 rounded-xl bg-indigo-50 p-3">
-                      <p className="mb-1 text-xs font-medium text-indigo-400">
-                        WORKING HOURS
-                      </p>
-
-                      <p className="text-sm font-semibold text-indigo-700">
-                        {formatWorkingTime(data.workingTime)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
-              <div className="px-5 py-12 text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-                  <AccessTimeIcon className="text-slate-400" />
+              <div className="px-5 py-14 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                  <WorkHistoryIcon sx={{ fontSize: 24 }} />
                 </div>
 
-                <p className="text-sm font-medium text-slate-700">
-                  No attendance records
-                </p>
+                <h3 className="mt-4 text-sm font-bold text-slate-800">
+                  No attendance history
+                </h3>
 
-                <p className="mt-1 text-xs text-slate-400">
-                  Your attendance records will appear here.
+                <p className="mx-auto mt-1 max-w-xs text-xs leading-5 text-slate-400">
+                  Your attendance records will appear here once you start
+                  checking in.
                 </p>
               </div>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
