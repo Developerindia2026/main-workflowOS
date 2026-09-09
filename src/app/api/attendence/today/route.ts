@@ -38,18 +38,20 @@ export async function GET(request: Request) {
     endOfDay.setHours(23, 59, 59, 999);
 
     // Get ONLY today's attendance
-    const getAttendence = await attendence.findOne({
-      employee: userID,
-      date: {
-        $gte: startOfDay,
-        $lte: endOfDay,
-      },
-    });
+    const getAttendence = await attendence
+      .findOne({
+        employee: userID,
+        date: {
+          $gte: startOfDay,
+          $lte: endOfDay,
+        },
+      })
+      .populate("employee");
 
     return NextResponse.json(
       {
         message: "Today's attendance returned",
-        data: getAttendence ? [getAttendence] : [],
+        data: getAttendence,
       },
       { status: 200 },
     );

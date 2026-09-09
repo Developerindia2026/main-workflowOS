@@ -29,6 +29,7 @@ export default function Checkin() {
   const [loading, setLoading] = useState<boolean>(false);
   const [action, setAction] = useState<"checkin" | "checkout" | null>(null);
   const [history, setHistory] = useState<attendenceProp[]>([]);
+  const [click, setClick] = useState<boolean>(false);
 
   const getHistory = async () => {
     try {
@@ -43,7 +44,7 @@ export default function Checkin() {
     try {
       const response = await axios.get(`/api/attendence/today`);
       console.log(response.data.data);
-      setAttendence(response.data.data);
+      setAttendence(response.data.data || []);
     } catch (error) {
       console.log(error);
     }
@@ -52,6 +53,7 @@ export default function Checkin() {
   const CheckinSend = async () => {
     setLoading(true);
     setAction("checkin");
+    setClick(true);
 
     try {
       navigator.geolocation.getCurrentPosition(
@@ -115,6 +117,8 @@ export default function Checkin() {
             setTimeout(() => {
               setAlert(false);
             }, 3000);
+
+            setClick(false);
           } catch (error) {
             console.log(error);
           } finally {
@@ -322,7 +326,7 @@ export default function Checkin() {
               <button
                 type="button"
                 onClick={CheckinSend}
-                disabled={loading}
+                disabled={click}
                 className="group relative flex min-h-[110px] items-center justify-center gap-4 overflow-hidden rounded-2xl bg-emerald-600 px-6 py-5 text-left text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15">

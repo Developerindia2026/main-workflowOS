@@ -44,8 +44,9 @@ export default function PresentEmployees() {
 
   const GetAttendence = async () => {
     try {
-      const response = await axios.get(`/api/attendence/today`);
-      setAttendence(response.data.attendence);
+      const response = await axios.get(`/api/attendence/admin/today`);
+      console.log(response.data.data);
+      setAttendence(response.data.data || []);
     } catch (error) {
       console.log(error);
     }
