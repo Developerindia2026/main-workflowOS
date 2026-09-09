@@ -52,11 +52,10 @@ export default function Checkin() {
 
   const CheckinSend = async () => {
     setAction("checkin");
-
     setClick(true);
+    setLoading(true);
 
     try {
-      setLoading(true);
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
@@ -133,6 +132,7 @@ export default function Checkin() {
           console.log(error);
           setLoading(false);
           setAction(null);
+          setClick(false);
         },
       );
     } catch (error) {
