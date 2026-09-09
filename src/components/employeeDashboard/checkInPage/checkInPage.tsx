@@ -91,6 +91,8 @@ export default function Checkin() {
       console.log(error);
       setLoading(false);
       setAction(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,6 +138,8 @@ export default function Checkin() {
       console.log(error);
       setLoading(false);
       setAction(null);
+    } finally {
+      setLoading(false);
     }
   };
 
