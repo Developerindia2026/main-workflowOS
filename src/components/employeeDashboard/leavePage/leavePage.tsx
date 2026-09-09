@@ -307,20 +307,22 @@ export default function LeavePage() {
                         </td>
 
                         {/* Status */}
-                        <td className="px-5 py-5 sm:px-6">
+                        <td className="px-4 py-4 sm:px-6 sm:py-5">
                           <span
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                              leave.status === "approved"
-                                ? "bg-green-50 text-emerald-600"
-                                : leave.status === "decline"
-                                  ? "bg-red-50 text-red-600"
-                                  : "bg-amber-50 text-amber-600"
-                            }`}
+                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5
+      text-xs font-semibold whitespace-nowrap transition-colors
+      ${
+        leave.status === "approved"
+          ? "border-emerald-200 bg-green-50 text-emerald-700"
+          : leave.status === "decline"
+            ? "border-red-200 bg-red-50 text-red-700"
+            : "border-amber-200 bg-amber-50 text-amber-700"
+      }`}
                           >
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
+                              className={`h-2 w-2 shrink-0 rounded-full ${
                                 leave.status === "approved"
-                                  ? "bg-emerald-500"
+                                  ? "bg-green-500"
                                   : leave.status === "decline"
                                     ? "bg-red-500"
                                     : "bg-amber-500"

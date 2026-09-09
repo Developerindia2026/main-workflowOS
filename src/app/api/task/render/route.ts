@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongoose";
 import task from "@/models/task";
-import { connect } from "http2";
 
 export async function GET(request: Request) {
   await connectDB();

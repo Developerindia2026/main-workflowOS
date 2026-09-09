@@ -39,13 +39,13 @@ export default function TaskPage() {
   useEffect(() => {
     getTask();
 
-    const interval = setInterval(() => {
-      getTask();
-    }, 300);
+    // const interval = setInterval(() => {
+    //   getTask();
+    // }, 300);
 
-    return () => {
-      clearInterval(interval);
-    };
+    // return () => {
+    //   clearInterval(interval);
+    // };
   }, []);
 
   const label = { slotProps: { input: { "aria-label": "Checkbox demo" } } };
@@ -123,17 +123,6 @@ export default function TaskPage() {
             })}
           </tbody>
         </table>
-      </div>
-
-      {/* Footer */}
-      <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p className="text-sm text-slate-500">
-          Showing <span className="font-medium text-slate-700">3</span> tasks
-        </p>
-
-        <button className="text-sm font-medium text-blue-600 transition hover:text-blue-700">
-          View all tasks →
-        </button>
       </div>
     </div>
   );

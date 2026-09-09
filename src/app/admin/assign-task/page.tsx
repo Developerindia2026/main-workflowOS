@@ -31,6 +31,7 @@ interface TaskProp {
   deadline?: string;
   attachment?: string | null;
   createdAt?: string;
+  status: string;
 }
 
 export default function AssignTask() {
@@ -126,7 +127,7 @@ export default function AssignTask() {
   // SUBMIT TASK
   // --------------------------------------------------
 
-  const handleBackend = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleBackend = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setError("");
@@ -698,6 +699,35 @@ export default function AssignTask() {
                         </a>
                       </div>
                     )}
+
+                    <div
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold
+    whitespace-nowrap border transition-all duration-200
+    ${
+      item.status === "Completed"
+        ? "bg-green-50 text-green-700 border-green-200"
+        : item.status === "On-going"
+          ? "bg-blue-50 text-blue-700 border-blue-200"
+          : item.status === "Declined"
+            ? "bg-red-50 text-red-700 border-red-200"
+            : "bg-gray-50 text-gray-700 border-gray-200"
+    }`}
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full
+      ${
+        item.status === "Completed"
+          ? "bg-green-500"
+          : item.status === "On-going"
+            ? "bg-blue-500"
+            : item.status === "Declined"
+              ? "bg-red-500"
+              : "bg-gray-500"
+      }`}
+                      />
+
+                      <p>{item.status}</p>
+                    </div>
 
                     {/* Bottom */}
 

@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongoose";
 import task from "@/models/task";
 import Jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+
 export async function GET(request: Request) {
   await connectDB();
 
@@ -19,19 +20,10 @@ export async function GET(request: Request) {
       id: string;
     };
 
-    if (!decoded) {
-      return NextResponse.json(
-        { message: "invalid and unauthroized user" },
-        { status: 404 },
-      );
-    }
-
-    const userID = decoded.id;
-    console.log(userID);
+    const userID = await decoded.id;
 
     const getTask = await task.find({
       employee: userID,
-      status: "pending",
     });
     console.log(getTask);
 

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
           .upload_stream(
             {
               folder: "task",
-              resource_type: "auto",
+              resource_type: "raw",
             },
             (error, result) => {
               if (error) {
@@ -59,9 +59,9 @@ export async function POST(request: Request) {
     const taskDatabase = await task.create({
       employee: employee,
       task: taskData,
-      deadline,
+      deadline: deadline,
       attachment: attachmentURL,
-      department,
+      department: department,
     });
 
     return NextResponse.json(
