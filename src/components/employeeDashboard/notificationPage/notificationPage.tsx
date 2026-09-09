@@ -30,7 +30,13 @@ export default function NotificationPage() {
   };
 
   useEffect(() => {
-    GetAnnoucement();
+    const interval = setInterval(() => {
+      GetAnnoucement();
+    }, 300);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   return (

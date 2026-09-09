@@ -140,8 +140,13 @@ export default function Checkin() {
   };
 
   useEffect(() => {
-    getAttendence();
-    getHistory();
+    const interval = setInterval(() => {
+      getHistory();
+    }, 300);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const todayRecord = attendence[0];
