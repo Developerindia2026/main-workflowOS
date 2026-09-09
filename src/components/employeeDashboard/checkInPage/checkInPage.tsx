@@ -51,11 +51,12 @@ export default function Checkin() {
   };
 
   const CheckinSend = async () => {
-    setLoading(true);
     setAction("checkin");
+
     setClick(true);
 
     try {
+      setLoading(true);
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
