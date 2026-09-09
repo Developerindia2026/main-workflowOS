@@ -277,7 +277,7 @@ export default function Checkin() {
               <button
                 type="button"
                 onClick={CheckinSend}
-                disabled={click || !!todayRecord?.checkIn?.time}
+                disabled={click || !!todayRecord?.checkOut?.time}
                 className="group relative flex min-h-[110px] items-center justify-center gap-4 overflow-hidden rounded-2xl bg-emerald-600 px-6 py-5 text-left text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15">
@@ -305,7 +305,7 @@ export default function Checkin() {
               <button
                 type="button"
                 onClick={checkoutSend}
-                disabled={click || !!todayRecord?.checkIn?.time}
+                disabled={click || !!todayRecord?.checkOut?.time}
                 className="group relative flex min-h-[110px] items-center justify-center gap-4 overflow-hidden rounded-2xl bg-slate-900 px-6 py-5 text-left text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
