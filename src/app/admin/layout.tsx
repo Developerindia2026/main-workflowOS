@@ -1,11 +1,27 @@
+"use client";
+
 import { BellDot, UserShield } from "lucide-react";
 import Link from "next/link";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
+import { LogOut } from "lucide-react";
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post(`/api/authentication/logout`);
+      router.push("/");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <>
       {/* NAVBAR */}
@@ -53,12 +69,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
 
             {/* Profile */}
-            <Link href="/admin/profile">
-              <button
-                type="button"
-                className="
+            <button
+              type="button"
+              className="
                 group flex items-center justify-center gap-2
-                rounded-xl border border-gray-200
+                rounded-xl border border-gray-500
                 bg-gray-900 px-3 py-2.5
                 text-sm font-medium text-white
                 shadow-sm
@@ -69,15 +84,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 active:scale-95
                 sm:px-4
               "
-              >
-                <UserShield
-                  size={19}
-                  className="transition-transform duration-300 group-hover:scale-110"
-                />
+              onClick={handleLogout}
+            >
+              <LogOut
+                size={19}
+                className="transition-transform duration-300 group-hover:scale-110"
+              />
 
-                <span className="hidden sm:inline">Profile</span>
-              </button>
-            </Link>
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
       </nav>

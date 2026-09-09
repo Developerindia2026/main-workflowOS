@@ -68,8 +68,8 @@ export default function Checkin() {
             });
 
             setAlert(true);
-            getAttendence();
-            getHistory();
+            await getAttendence();
+            await getHistory();
 
             setTimeout(() => {
               setAlert(false);
@@ -109,8 +109,8 @@ export default function Checkin() {
               latitude,
               longitude,
             });
-            getAttendence();
-            getHistory();
+            await getAttendence();
+            await getHistory();
 
             setAlert(true);
 
@@ -146,20 +146,6 @@ export default function Checkin() {
 
   const todayRecord = attendence[0];
 
-  const formatTime = (time?: string) => {
-    if (!time) return "--";
-
-    try {
-      return new Date(time).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch {
-      return "--";
-    }
-  };
-
   const formatDate = (date?: string) => {
     if (!date) return "--";
 
@@ -177,11 +163,31 @@ export default function Checkin() {
   const formatWorkingTime = (time?: string) => {
     if (!time) return "--";
 
+    const milliseconds = Number(time);
+
+    if (isNaN(milliseconds)) return "--";
+
+    const totalSeconds = Math.floor(milliseconds / 1000);
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0",
+    )}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  const formatTime = (time?: string) => {
+    if (!time) return "--";
+
     try {
       return new Date(time).toLocaleTimeString("en-US", {
+        timeZone: "Asia/Kolkata",
         hour: "2-digit",
         minute: "2-digit",
-        hour12: false,
+        hour12: true,
       });
     } catch {
       return "--";
@@ -236,70 +242,6 @@ export default function Checkin() {
           </div>
         </div>
 
-        {/* Today's Overview */}
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {/* Check In */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <LoginIcon sx={{ fontSize: 21 }} />
-              </div>
-
-              <span className="text-xs font-medium text-slate-400">
-                CHECK IN
-              </span>
-            </div>
-
-            <p className="text-2xl font-bold text-slate-900">
-              {formatTime(todayRecord?.checkIn?.time)}
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500">Today's check-in time</p>
-          </div>
-
-          {/* Check Out */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-                <LogoutIcon sx={{ fontSize: 21 }} />
-              </div>
-
-              <span className="text-xs font-medium text-slate-400">
-                CHECK OUT
-              </span>
-            </div>
-
-            <p className="text-2xl font-bold text-slate-900">
-              {formatTime(todayRecord?.checkOut?.time)}
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Today's check-out time
-            </p>
-          </div>
-
-          {/* Working Hours */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                <WorkHistoryIcon sx={{ fontSize: 21 }} />
-              </div>
-
-              <span className="text-xs font-medium text-slate-400">
-                WORKING HOURS
-              </span>
-            </div>
-
-            <p className="text-2xl font-bold text-slate-900">
-              {formatWorkingTime(todayRecord?.workingTime)}
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Total working duration
-            </p>
-          </div>
-        </div>
-
         {/* Attendance Action Card */}
         <div className="mb-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-5 py-5 sm:px-7">
@@ -326,7 +268,7 @@ export default function Checkin() {
               <button
                 type="button"
                 onClick={CheckinSend}
-                disabled={click}
+                disabled={click || !!todayRecord?.checkIn?.time}
                 className="group relative flex min-h-[110px] items-center justify-center gap-4 overflow-hidden rounded-2xl bg-emerald-600 px-6 py-5 text-left text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15">
@@ -354,7 +296,7 @@ export default function Checkin() {
               <button
                 type="button"
                 onClick={checkoutSend}
-                disabled={loading}
+                disabled={click || !!todayRecord?.checkIn?.time}
                 className="group relative flex min-h-[110px] items-center justify-center gap-4 overflow-hidden rounded-2xl bg-slate-900 px-6 py-5 text-left text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
