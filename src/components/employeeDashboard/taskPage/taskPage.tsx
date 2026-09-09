@@ -39,13 +39,13 @@ export default function TaskPage() {
   useEffect(() => {
     getTask();
 
-    // const interval = setInterval(() => {
-    //   getTask();
-    // }, 300);
+    const interval = setInterval(() => {
+      getTask();
+    }, 300);
 
-    // return () => {
-    //   clearInterval(interval);
-    // };
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const label = { slotProps: { input: { "aria-label": "Checkbox demo" } } };
